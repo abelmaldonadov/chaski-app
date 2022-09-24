@@ -17,8 +17,8 @@ import { StatusBar } from "expo-status-bar"
 
 export const SignInScreen = ({ navigate }) => {
   const dispatch = useDispatch()
-  const [username, setUsername] = useState("amaldonado")
-  const [password, setPassword] = useState("1234")
+  const [username, setUsername] = useState()
+  const [password, setPassword] = useState()
 
   const signIn = async () => {
     try {
@@ -52,6 +52,7 @@ export const SignInScreen = ({ navigate }) => {
           placeholder="password"
           placeholderTextColor="#3c3f41"
           keyboardAppearance="dark"
+          textContentType="password"
         />
         <Button title="Ingresar" onPress={signIn} />
         <StatusBar style="light" />

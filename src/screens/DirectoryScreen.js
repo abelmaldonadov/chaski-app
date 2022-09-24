@@ -71,6 +71,7 @@ export const DirectoryScreen = ({ navigation }) => {
             refreshing={isRefreshing}
             onRefresh={findAll}
             tintColor="#fff"
+            progressBackgroundColor="#000"
             colors={["#fff"]}
           />
         }

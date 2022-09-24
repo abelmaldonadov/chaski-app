@@ -14,11 +14,12 @@ import { useEffect, useRef, useState } from "react"
 import { ChatPreview } from "../components/ChatPreview"
 import axios from "axios"
 import { API_ROUTE, PUSHER_API_KEY } from "../config/consts"
-import { receive, send, set } from "../store/features/chatSlice"
+import { receive, set } from "../store/features/chatSlice"
 import Pusher from "pusher-js"
 import { useDispatch, useSelector } from "react-redux"
 import * as Device from "expo-device"
 import * as Notifications from "expo-notifications"
+import { add } from "../store/features/messageSlice"
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -40,13 +41,18 @@ export const ChatListScreen = ({ navigation }) => {
 
   useEffect(() => {
     findChats()
-    subscribe()
+    const socket = new Pusher(PUSHER_API_KEY, {
+      cluster: "sa1",
+    })
+    subscribeOnPusher(socket)
     registerForPushNotificationsAsync()
     notificationsListen()
     return () => {
+      socket.unsubscribe(user.id)
+      console.log("Unsubscribe to Pusher")
       Notifications.removeNotificationSubscription(notificationListener.current)
       Notifications.removeNotificationSubscription(responseListener.current)
-      console.log("des")
+      console.log("Unsubscribe to expo Notification")
     }
   }, [])
 
@@ -75,10 +81,7 @@ export const ChatListScreen = ({ navigation }) => {
     }
   }
 
-  const subscribe = () => {
-    const socket = new Pusher(PUSHER_API_KEY, {
-      cluster: "sa1",
-    })
+  const subscribeOnPusher = (socket) => {
     socket.unsubscribe(user.id)
     const channel = socket.subscribe(user.id)
     channel.bind("send-message", (e) => {
@@ -95,6 +98,7 @@ export const ChatListScreen = ({ navigation }) => {
         ).toISOString(),
       }
       dispatch(receive(e))
+      dispatch(add(e))
     })
   }
 
@@ -113,6 +117,7 @@ export const ChatListScreen = ({ navigation }) => {
       }
       const token = (await Notifications.getExpoPushTokenAsync()).data
       console.log(token)
+      await saveToken(token)
     } else {
       Alert.alert("Error", "Must use physical device for Push Notifications")
     }
@@ -127,11 +132,22 @@ export const ChatListScreen = ({ navigation }) => {
     }
   }
 
+  const saveToken = async (token) => {
+    try {
+      const { data } = await axios.post(`${API_ROUTE}/api/people/save-token`, {
+        ...user,
+        expoToken: token,
+      })
+      console.log("Expo Notifications token was saved")
+    } catch (err) {
+      console.log("Expo Notifications Token was not saved")
+    }
+  }
+
   const notificationsListen = () => {
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         console.log(notification)
-        dispatch(receive(notification.request.content.data))
       })
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
@@ -157,6 +173,7 @@ export const ChatListScreen = ({ navigation }) => {
             refreshing={isRefreshing}
             onRefresh={findChats}
             tintColor="#fff"
+            progressBackgroundColor="#000"
             colors={["#fff"]}
           />
         }

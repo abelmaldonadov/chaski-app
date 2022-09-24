@@ -1,5 +1,4 @@
 import {
-  Alert,
   KeyboardAvoidingView,
   RefreshControl,
   ScrollView,
@@ -15,14 +14,15 @@ import { MessageBubble } from "../components/MessageBubble"
 import { Feather } from "@expo/vector-icons"
 import { API_ROUTE } from "../config/consts"
 import { useDispatch, useSelector } from "react-redux"
+import { add, set } from "../store/features/messageSlice"
 import { send } from "../store/features/chatSlice"
 
 export const ChatScreen = ({ navigation, route }) => {
-  const [messages, setMessages] = useState([])
   const [text, setText] = useState("")
   const scrollViewRef = useRef()
   const { person } = route.params
   const { data: user } = useSelector((state) => state.user)
+  const { list } = useSelector((state) => state.message)
   const dispatch = useDispatch()
   const [range, setRange] = useState({
     from: 1,
@@ -42,7 +42,7 @@ export const ChatScreen = ({ navigation, route }) => {
         `${API_ROUTE}/api/messages/conversation/${range.from}/${range.to}`,
         [user.id, person.id]
       )
-      setMessages(data.reverse())
+      dispatch(set(data.reverse()))
     } catch (err) {
       console.log(err)
     } finally {
@@ -62,11 +62,11 @@ export const ChatScreen = ({ navigation, route }) => {
         content: text,
         insertionDate: new Date().toISOString(),
       }
+      dispatch(add(message))
       const { data } = await axios.post(
         `${API_ROUTE}/api/messages/send-message`,
         message
       )
-      setMessages([...messages, data])
       dispatch(send(data))
     } catch (err) {
       console.log(err)
@@ -88,11 +88,12 @@ export const ChatScreen = ({ navigation, route }) => {
             refreshing={isRefreshing}
             onRefresh={onRefresh}
             tintColor="#fff"
+            progressBackgroundColor="#000"
             colors={["#fff"]}
           />
         }
       >
-        {messages.map((item) => (
+        {list.map((item) => (
           <MessageBubble key={item.id} message={item} />
         ))}
         <View style={{ height: 10 }}></View>
