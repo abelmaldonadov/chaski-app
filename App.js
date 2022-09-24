@@ -1,20 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SignInStack } from "./src/routes/SignInStack"
+import { MainTabs } from "./src/routes/MainTabs"
+import { Provider, useSelector } from "react-redux"
+import store from "./src/store/store"
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    <Provider store={store}>
+      <Routes />
+    </Provider>
+  )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const Routes = () => {
+  const { data: user } = useSelector((state) => state.user)
+
+  if (user) {
+    return <MainTabs />
+  } else {
+    return <SignInStack />
+  }
+}
